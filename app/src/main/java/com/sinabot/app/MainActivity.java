@@ -17,7 +17,6 @@ import android.widget.LinearLayout;
 
 public class MainActivity extends Activity {
 
-    // The exact address you already open in the browser.
     private static final String DASHBOARD_URL = "http://76.13.78.123:5000";
     private static final String PREFS = "sinabot";
 
@@ -27,7 +26,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Keep the screen awake while watching a match / trading.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         webView = new WebView(this);
@@ -35,15 +33,19 @@ public class MainActivity extends Activity {
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);          // localStorage (theme, etc.)
+        s.setDomStorageEnabled(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setMediaPlaybackRequiresUserGesture(false);
 
+        // --- fit / zoom fixes ---
+        s.setTextZoom(100);              // ignore the phone's big system font
+        s.setSupportZoom(true);          // allow pinch-to-zoom as a fallback
+        s.setBuiltInZoomControls(true);
+        s.setDisplayZoomControls(false); // no ugly +/- buttons on screen
+
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
-            // Dashboard is behind HTTP Basic auth -> handle the login here,
-            // otherwise a raw WebView just fails to load the page.
             @Override
             public void onReceivedHttpAuthRequest(WebView view, HttpAuthHandler handler,
                                                   String host, String realm) {
@@ -51,9 +53,9 @@ public class MainActivity extends Activity {
                 String u = p.getString("auth_user", null);
                 String pw = p.getString("auth_pass", null);
                 if (handler.useHttpAuthUsernamePassword() && u != null && pw != null) {
-                    handler.proceed(u, pw);        // 1st try with saved creds
+                    handler.proceed(u, pw);
                 } else {
-                    promptCredentials(handler);    // no creds yet, or saved ones were wrong
+                    promptCredentials(handler);
                 }
             }
         });
@@ -63,7 +65,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Ask once for user/pass, remember them on-device (app-private storage).
     private void promptCredentials(final HttpAuthHandler handler) {
         final EditText user = new EditText(this);
         user.setHint("username");
@@ -109,7 +110,6 @@ public class MainActivity extends Activity {
         webView.restoreState(savedInstanceState);
     }
 
-    // Hardware Back navigates WebView history instead of closing the app.
     @Override
     public void onBackPressed() {
         if (webView.canGoBack()) {
